@@ -1,0 +1,24 @@
+
+1 TOOLS
+
+	- NodeJS: https://nodejs.org/en/download/
+	- Free 12 month Azure account: https://azure.microsoft.com/en-us/free/
+	- Yarn Package Manager: https://yarnpkg.com/lang/en/docs/install/
+	- Code Editor: I’m using Visual Studio Code
+	- Git: https://git-scm.com/downloads		
+	- Postman: https://www.getpostman.com/
+
+2 YARN INITATION:
+	yarn init -y 	[creates packge.json]
+	
+3 GIT COMMANDS
+	git status
+	git init
+	git branch -M main
+	git remote add origin https://github.com/a-blancoo/last-repo.git
+	git remote -v
+4 CREATE .gitignore and write commands
+	# ignorera:
+	.vscode
+	.env
+	.DS_Store
