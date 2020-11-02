@@ -6,19 +6,339 @@
 	- Yarn Package Manager: https://yarnpkg.com/lang/en/docs/install/
 	- Code Editor: I’m using Visual Studio Code
 	- Git: https://git-scm.com/downloads		
-	- Postman: https://www.getpostman.com/
+	- Postman: https://www.getpostman.com/ or you can add a plugin to your web browser:
+		http  request maker
 
 2 YARN INITATION:
 	yarn init -y 	[creates packge.json]
 	
-3 GIT COMMANDS
+3 CREATE .gitignore and write commands
+	# ignorera:
+	.vscode
+	.env
+	.DS_Store
+4 GIT COMMANDS
 	git status
 	git init
 	git branch -M main
 	git remote add origin https://github.com/a-blancoo/last-repo.git
 	git remote -v
-4 CREATE .gitignore and write commands
-	# ignorera:
-	.vscode
-	.env
-	.DS_Store
+5 SET UP EXPRESS SERVER [in the terminal]
+	yarn add express dotenv body-parser
+6 CREATE FILES / FOLDERS IN ROOT
+	* server.js
+		require('dotenv').config();
+		const express = require('express');
+		const bodyParser = require('body-parser');
+
+		const app = express();
+		app.use(bodyParser.json());
+		app.use(bodyParser.urlencoded({ extended: false }));
+
+		// with react-router or w/e client side routing package you use
+		app.get('/', (req, res) => {
+		res.sendFile('index.html', { root: __dirname });
+		});
+		
+		const { PORT } = process.env;
+		app.listen(PORT, () => console.log(`Wizardry happening on port ${PORT}`));
+	* .env
+		PORT = 5001
+	* run in the terminal:
+	yarn start
+7 ADD a <index.html> IN THE ROOT, AND TYPE SOME HTML CODE:
+
+		<!DOCTYPE html>
+		<html>
+		<head>
+			<title>Page Title</title>
+		</head>
+		<body>
+
+			<h1>This is index.html in the project root</h1>
+			<p>So, how are you todaY?, regards from the PROJECT'S ROOT :O)</p>
+
+		</body>
+		</html> 
+
+	* ADD NEXT SCRIPT AT <server.js>
+		app.get('/*', (req, res) => {
+			res.sendFile('index.html', { root: __dirname });
+			});
+8 WORK IN AZURE, CREATE A AZURE COSMOSDB ACCOUNT:
+	after your had an account, go in azure comsmosdb THE CONNECTION STRINGS
+	and copy the login connections and paste them at your <.env> file in the root of the project:
+	
+	# connections to the mongoDB:
+
+	DB_CONN =   mongodb://admin-db:FlMgCffMba7WTyEu7HUYnt4UgRFedlyVmTufF7fLM8qMdwTwe99hANUqKQtdAHIoS5Q0aQ0OtoVLcXrASLDqNQ==@admin-db.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@admin-db@
+	DB_US   =   admin-db
+	DB_PW   =   FlMgCffMba7WTyEu7HUYnt4UgRFedlyVmTufF7fLM8qMdwTwe99hANUqKQtdAHIoS5Q0aQ0OtoVLcXrASLDqNQ==
+
+9 INSTALL mongoose INSIDE THE ROOT:
+	* This package will let us to connect to the DB, allow us to CRUD the DB via models we create
+	In the terminal:
+		yarn add mogoose.
+
+10 CREATE A FOLDER IN THE ROOT NAMED: 'server' THEN CREATE  A FILE INSIDE IT:
+	Create: server > db-conn.js
+		// INSIDE db-conn.js:
+		const mongoose = require('mongoose');
+		const { DB_CONN, DB_USER, DB_PW } = process.env;
+		mongoose
+		.connect(
+			DB_CONN,
+			{ auth: { user: DB_USER, password: DB_PW }, useNewUrlParser: true },
+		)
+		.then(() => console.log('Succesfully connected to the DB through the power of magic...'))
+		.catch(console.error);
+11 ADD A LINE SCRIPT IN 'server.js' INSIDE THE ROOT:
+	// INSIDE server.js:
+	require ('./server/db-conn')
+	* restart the server at the terminal whit the commands:
+		[ctrl] + C 
+		y 
+		yarn start
+	
+12 CREATION OF A MODEL OF DATA BASE IN OUR AZURE-MONGODB ACCOUNT:
+	Now our server is serving a webpage and is connected to Azure’s cloud DB. 
+	Let’s use mongoose to create a model that we can then use to save documents into the database.
+	* Create a folder named 'models' inside the 'server' folder and a file 'Thoughts.js' inside it:
+		root > server > models > Thought.js
+			// INSIDE THE 'Thought.js:
+			const mongoose = require('mongoose');
+
+			// This is just a blueprint so you'll always know what the model in the DB consists of
+			const ThoughtSchema = mongoose.Schema({
+				thought: String,
+				dateCreated: Date,
+			});
+
+			// This is the actual model used to interact with the DB!!!
+			const Thought = mongoose.model('Thought', ThoughtSchema);
+
+	* Create a folder named 'routes' inside the 'server' folder and a file 'thoughts-route.js:
+		root > server > routes > thougths-route.js
+
+		// INSIDE 'thoughts-route.js :
+			const router = require('express').Router();
+			const Thought = require('../models/Thought');
+
+			/**
+			* URL: localhost:5001/api/thoughts/
+			* Response: Array of all Thought documents
+			*/
+			router.get('/', (req, res, next) => {
+			Thought.find({}, (err, thoughts) => {
+				if (err) next(err);
+				else res.json(thoughts);
+			});
+			});
+
+			/**
+			* URL: localhost:5001/api/thoughts/seed
+			* Description: Used to give database some test data.
+			*/
+			router.post('/seed', async (req, res, next) => {
+			for (let x = 0; x < 5; x++) {
+				const newThought = new Thought({
+				thought: `This is thought ${Math.random().toFixed(5)}`,
+				dateCreated: new Date(),
+				});
+				await newThought.save();
+			}
+			res.send('Lets run the GET after this to see if the thoughts got seeded successfully  ');
+			});
+
+			/**
+			* URL: localhost:5001/api/thoughts/create
+			* Response: Newly created Thought object if successful
+			*/
+			router.post('/create', (req, res, next) => {
+			const { thought } = req.body;
+			const newThought = new Thought({
+				thought,
+				dateCreated: new Date(),
+			});
+			newThought.save(err => {
+				if (err) next(err);
+				else res.json({ newThought, msg: 'thought successfully saved!' });
+			});
+			});
+
+			/**
+			* URL: localhost:5001/api/thoughts/
+			* Description: Deletes all Thoughts from DB
+			*/
+			router.delete('/', (req, res, next) => {
+			Thought.deleteMany({}, err => {
+				if (err) next(err);
+				else res.send('Successfully deleted all thoughts');
+			});
+			});
+
+			module.exports = router;
+
+	* ADD THE NEXT SCRIPT AT: 'root > server.js'
+		....
+		// mount routes
+		app.use('/api/thoughts/', require('./server/routes/thoughts-route'));
+		....
+13 TEST THAT ALL WORKING, RESTART THE SERVER:
+	* restart the server at the terminal whit the commands:
+		[ctrl] + C  // ANSWER YES BY TYPING 'Y'
+		yarn start
+	* IF YOU HAVE THE < HHTP REQUEST MAKER> ALREADE INSTALLED, THEN FOLLOW THE NEXT STEPS:
+		[SHIFT]+[ALT]+Y
+	
+		* MAKE A REQUEST
+			Target site:	localhost:5001/api/thoughts/seed
+			Method:			POST 
+			submit
+	* IN POSTMAN:
+		SELECT [POST]		WRITE AT ITS BROWSER:[localhost:5001/api/thoughts/seed]  [SEND]
+14 CREATION OF THE Create-React-App (CRA)
+	* CREATE A FOLDER AT root > client
+		- go inside it with the command :
+		cd client
+	* INSTALL / RUN THE ACTUAL create-react-app
+		- at the terminal:
+			npx create-react-app <name of the app>
+		- go inside it(mine is called 'toughts-react') with the command : 
+			cd client toughts-react
+	* INSTALL / ADD AXIOS
+	- at the terminal, at root>client>thoughts-react
+		yarn add axios 
+
+	* ADD PROXY AT root>client>thoughts-react>package.json
+		// att the package.json
+		 "proxy":"http://localhost:5001"
+15 INTERACTION BETWEEN THE SERVER AND THE CLIENT:
+	We will use App.js for this. Replace it’s current contents with the below.
+	* GO TO THE root>client>thoughts-react>src>app.js
+	// inside app.js write:
+		import React, { Component } from 'react';
+		import './App.css';
+		import axios from 'axios';
+
+		class App extends Component {
+		constructor(props) {
+			super(props);
+			this.state = {
+			thoughts: [],
+			};
+		}
+
+		componentDidMount() {
+			axios
+			.get('/api/thoughts/')
+			.then(res => this.setState({ thoughts: res.data }))
+			.catch(alert);
+		}
+
+		render() {
+			const { thoughts } = this.state;
+
+			return (
+			<div className="App">
+				{/* Buttons to interact with API */}
+				<button onClick={this.createThought}>Create Thought</button>
+				<button onClick={this.deleteThoughts}>Delete Thoughts</button>
+				<button onClick={this.seedThoughts}>Seed Thoughts</button>
+				{/* List of thoughts in Cosmos DB */}
+				<ul>
+				{thoughts.map(thoughtModel => (
+					<li
+					style={{ listStyleType: 'none', margin: '20px', borderBottom: '1px solid black' }}
+					key={thoughtModel._id}
+					>
+					{thoughtModel.thought}
+					</li>
+				))}
+				</ul>
+			</div>
+			);
+		}
+
+		createThought = () => {
+			const thought = prompt('Enter your thought: ');
+			if (!thought) return;
+			axios
+			.post('/api/thoughts/create', { thought })
+			.then(res => this.setState({ thoughts: [...this.state.thoughts, res.data.newThought] }))
+			.catch(err => alert(`Failed to create thought\n${JSON.stringify(err)}`));
+		};
+
+		deleteThoughts = () => {
+			const doDelete = window.confirm('Delete all Thoughts?');
+			if (!doDelete) return;
+			axios
+			.delete('/api/thoughts/')
+			.then(res => this.setState({ thoughts: [] }))
+			.catch(err => alert(`Failed to delete all thoughts\n${JSON.stringify(err)}`));
+		};
+
+		seedThoughts = () => {
+			const doSeed = window.confirm('Do you want to seed random data?');
+			if (!doSeed) return;
+			axios
+			.post('/api/thoughts/seed', {})
+			.then(() => {
+				axios
+				.get('/api/thoughts/')
+				.then(res => this.setState({ thoughts: res.data }))
+				.catch(alert);
+			})
+			.catch(alert);
+		};
+		}
+
+		export default App;
+16 VISUALIZING THE OF THE COMMAND 'yarn run build' [NOT A NECESARY STEP, JUST FOR DIDACTICAL POURPOSES ONLY]
+	- INSIDE root>client>thoghts-react 
+	- run at the terminal:
+		yarn run build 
+	- we can remove this FOLDER , because it will be created by azure later in production
+		- root>client>thoghts-react>build
+17 LAST ADJUSTMENTS BEFORE TO MIGRATE THE APPLICATION TO AZURE.
+	* ADJUST START SCRIPTS ATT THE 'package.json' att the ROOT by adding the next script:
+	// AT root> package.json
+		....
+		"scripts": {
+			"start": "cd client/thoughts-react && yarn && yarn run build && cd ../.. && node server",
+			"dev": "node server"
+		},
+		....
+	* ADJUST THE STATIC REDITECTIONS SCRIPTS ATT THE 'server.js' att the ROOT by adding the next script:
+	// AT root> server.js
+		....
+		// gives server access to static files generated by running yarn build in client
+		app.use(express.static('./client/thoughts-react/build'));
+		....
+		// concatenate :
+		res.sendFile('index.html', { root: __dirname + '/client/thoughts-react/build/' });
+
+18 LAST STEP: TO CLOUD AND FAR ...
+	* GO THE THE AZURE PORTAL:
+		https://portal.azure.com/
+	* CREATE AN WEBAPP - FIND AT THE RESOURCES
+		APP SERVICES + ADD
+			SUBSCRIPTION: 'FREE'
+			RESOURCE GROUP 'MY-RS' [CHOOSE THE ONE YOU HAVE OR CREATE A NEW ONE]
+			NAME 'MY-APP-NAME'[CREATE A NAME APP]
+			RUNTIME STACK 'NODE' [CHOOSE]
+			...
+			CREATE
+	* CONFIGURATION OF THE WEBB APPLICATION INSIDE AZURE:
+		AT THE PORTAL, GO TO THE LEFT AND FIND: SETTINGS/CONFIGURATIONS
+			APPLICATION SETTINGS/
+			 + NEW APPLICATION SETTING
+				DB_CONN 
+			 + NEW APPLICATION SETTING
+				DB_USER
+			 + NEW APPLICATION SETTING
+				DB_PW
+			SAVE
+
+
+
