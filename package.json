@@ -6,7 +6,7 @@
   "repository": "https://github.com/a-blancoo/last-repo.git",
   "author": "a-blancoo <angel.skolan@gmail.com>",
   "scripts": {
-    "start": "cd client/thoughts-react && npm && npm run build && cd ../.. && node server",
+    "start": "cd client/thoughts-react && yarn && yarn run build && cd ../.. && node server",
     "dev": "node server"
   },
   "dependencies": {
