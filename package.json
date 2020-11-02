@@ -1,7 +1,7 @@
 {
   "name": "codic_react",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "license": "MIT",
   "repository": "https://github.com/a-blancoo/last-repo.git",
   "author": "a-blancoo <angel.skolan@gmail.com>",
