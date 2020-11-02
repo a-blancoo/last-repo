@@ -13,7 +13,7 @@ app.use(express.static('./client/thoughts-react/build/'));
 // mount routes
 app.use('/api/thoughts/', require('./server/routes/thoughts-route'));
 
-app.get('/', (req, res) => {
+app.get('/*', (req, res) => {
     res.sendFile('index.html', { root: __dirname + '/client/thoughts-react/build/' });
     });
 
