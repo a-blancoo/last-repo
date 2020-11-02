@@ -16,7 +16,7 @@ router.get('/', (req, res, next) => {
  * URL: localhost:5001/api/thoughts/seed
  * Description: Used to give database some test data.
  */
-router.post('/seed', async (req, res, next) => {
+router.post('/seed', async (req, res) => {
   for (let x = 0; x < 5; x++) {
     const newThought = new Thought({
       thought: `This is thought ${Math.random().toFixed(5)}`,
@@ -54,10 +54,5 @@ router.delete('/', (req, res, next) => {
   });
 });
 
-function getDate() {
-  const date = new Date();
-  const beatyDate = [date.getTime(), '-', date.getDate(), '-', date.getMonth() + 1, '-', date.getFullYear()];
-  return beatyDate;
-}
 
 module.exports = router;
